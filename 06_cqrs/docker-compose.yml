@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+
+  redis-bloom:
+    image: redislabs/rebloom:latest
+    ports:
+      - "6380:6379" # 🔥 host 6380 → container 6379
