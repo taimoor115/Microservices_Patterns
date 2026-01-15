@@ -1,0 +1,19 @@
+### Test 1: Access without API Key (Should fail with 401 Unauthorized)
+GET http://localhost:3000/users/1
+
+
+### Test 2: Get User via Gateway (With correct API Key)
+GET http://localhost:3000/users/1
+api-key: secret123
+
+
+### Test 3: Get Order via Gateway (With correct API Key)
+GET http://localhost:3000/orders/99
+api-key: secret123
+
+
+### Test 4: Direct hit to User Service (Testing backend directly)
+GET http://localhost:4001/users/1
+
+### Test 5: Direct hit to Order Service (Testing backend directly)
+GET http://localhost:4002/orders/99
