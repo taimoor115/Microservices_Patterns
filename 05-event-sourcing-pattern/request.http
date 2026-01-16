@@ -1,0 +1,43 @@
+### Variables
+@gateway = http://localhost:3000
+@userId = replace_this_with_id_from_response
+@orderId = replace_this_with_id_from_response
+
+##############################################
+### 1. USER SERVICE TESTS
+##############################################
+
+# @name createUser
+POST {{gateway}}/users
+Content-Type: application/json
+
+{
+    "name": "Arslan Architect",
+    "email": "arslan@example.com"
+}
+
+###
+
+# @name getUserFromReadModel
+GET {{gateway}}/users/6a914ffe-9ca1-449a-901f-e9a5ac7bcff8
+
+##############################################
+### 2. ORDER SERVICE TESTS
+##############################################
+
+# @name placeOrder
+POST {{gateway}}/orders
+Content-Type: application/json
+
+{
+    "userId": "6a914ffe-9ca1-449a-901f-e9a5ac7bcff8",
+    "item": "MacBook Pro M3",
+    "price": 2500
+}
+
+###
+
+# @name getOrderFromReadModel
+GET http://localhost:3002/queries/orders/34445c16-320c-4324-8d87-72c3fca0f997
+
+
