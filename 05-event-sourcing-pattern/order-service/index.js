@@ -42,6 +42,7 @@ async function start() {
     });
 }
 
+// COMMAND: Place Order
 app.post('/place', async (req, res) => {
     try {
         const { userId, item } = req.body;
@@ -61,6 +62,27 @@ app.post('/place', async (req, res) => {
             stack: err.stack,
             full: err
         });
+    }
+});
+
+// QUERY: Get Order from Read Model
+app.get('/queries/orders/:orderId', async (req, res) => {
+    try {
+        const order = await db.collection('orders_read_model').findOne({ orderId: req.params.orderId });
+        res.json(order || { error: "Order not found" });
+    } catch (err) {
+        console.error('Query Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Worker: Update Read Model for Orders
+subscribe('order_read_model_queue', 'order.placed', async (data) => {
+    try {
+        await db.collection('orders_read_model').insertOne(data);
+        console.log("📊 Order Read Model updated:", data.orderId);
+    } catch (err) {
+        console.error("❌ Failed to update order read model:", err.message);
     }
 });
 

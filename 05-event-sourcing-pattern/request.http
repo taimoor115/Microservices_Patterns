@@ -1,7 +1,18 @@
 ### Variables
 @gateway = http://localhost:3000
-@userId = replace_this_with_id_from_response
-@orderId = replace_this_with_id_from_response
+@orderServiceUrl = http://localhost:3002
+@userId = replace_this_with_id_from_createUser_response
+@orderId = replace_this_with_id_from_placeOrder_response
+
+##############################################
+### IMPORTANT: TEST SEQUENCE
+##############################################
+### 1. Run: createUser
+### 2. Wait 1-2 seconds for event processing
+### 3. Run: getUserFromReadModel (use userId from step 1)
+### 4. Run: placeOrder (use userId from step 1)
+### 5. Wait 1-2 seconds for event processing
+### 6. Run: getOrderFromReadModel (use orderId from step 4)
 
 ##############################################
 ### 1. USER SERVICE TESTS
@@ -19,7 +30,7 @@ Content-Type: application/json
 ###
 
 # @name getUserFromReadModel
-GET {{gateway}}/users/6a914ffe-9ca1-449a-901f-e9a5ac7bcff8
+GET {{gateway}}/users/{{userId}}
 
 ##############################################
 ### 2. ORDER SERVICE TESTS
@@ -30,7 +41,7 @@ POST {{gateway}}/orders
 Content-Type: application/json
 
 {
-    "userId": "6a914ffe-9ca1-449a-901f-e9a5ac7bcff8",
+    "userId": "{{userId}}",
     "item": "MacBook Pro M3",
     "price": 2500
 }
@@ -38,6 +49,6 @@ Content-Type: application/json
 ###
 
 # @name getOrderFromReadModel
-GET http://localhost:3002/queries/orders/34445c16-320c-4324-8d87-72c3fca0f997
+GET {{orderServiceUrl}}/queries/orders/{{orderId}}
 
 
