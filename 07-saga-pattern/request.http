@@ -1,0 +1,12 @@
+### Create Order (Saga Start)
+POST http://localhost:3000/orders
+Content-Type: application/json
+
+{
+  "amount": 5000
+}
+
+### ------------------------------------
+
+### Get Order Status
+GET http://localhost:3000/orders/5a62e984-d7ff-400b-914b-cc19ffaf1ba9
