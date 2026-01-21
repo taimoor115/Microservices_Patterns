@@ -1,0 +1,28 @@
+{
+  "name": "bulkhead-pattern",
+  "version": "1.0.0",
+  "description": "Bulkhead Pattern Implementation - Microservice Resilience",
+  "main": "gateway-with-bulkhead.js",
+  "scripts": {
+    "start": "node gateway-with-bulkhead.js",
+    "start:without-bulkhead": "node gateway-without-bulkhead.js",
+    "start:with-circuit-breaker": "node gateway-with-bulkhead-circuit-breaker.js",
+    "test": "node test.js",
+    "dev": "concurrently \"npm run slow-api\" \"npm run fast-api\" \"npm run gateway\""
+  },
+  "keywords": [
+    "bulkhead",
+    "microservices",
+    "resilience",
+    "pattern"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

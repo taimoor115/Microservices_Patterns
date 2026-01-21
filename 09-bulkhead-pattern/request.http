@@ -1,0 +1,269 @@
+###############################################################################
+# BULKHEAD PATTERN - HTTP Request Testing
+# 
+# This file contains requests for testing the bulkhead pattern implementation
+# Open this file in REST Client extension and execute requests
+#
+# Prerequisites:
+# 1. npm install
+# 2. Start slow-api:    node slow-api.js
+# 3. Start fast-api:    node fast-api.js
+# 4. Start gateway:     node gateway-with-bulkhead.js (or alternatives)
+#
+###############################################################################
+
+@baseUrl = http://localhost:3000
+@slowApiUrl = http://localhost:3001
+@fastApiUrl = http://localhost:3002
+
+###############################################################################
+# 1. SLOW API - Third Party Service Simulation
+###############################################################################
+
+### Slow API - Health Check
+GET {{slowApiUrl}}/api/health
+
+### Slow API - Process Request (5 second delay)
+GET {{slowApiUrl}}/api/process?delay=5000&failRate=0.1
+
+### Slow API - Process Request (Faster variant - 2 seconds)
+GET {{slowApiUrl}}/api/process?delay=2000&failRate=0.05
+
+### Slow API - Process Request (Slow variant - 8 seconds)
+GET {{slowApiUrl}}/api/process?delay=8000&failRate=0.2
+
+###############################################################################
+# 2. FAST API - Internal Service
+###############################################################################
+
+### Fast API - Health Check
+GET {{fastApiUrl}}/api/health
+
+### Fast API - Get Data
+GET {{fastApiUrl}}/api/data
+
+###############################################################################
+# 3. GATEWAY - WITHOUT BULKHEAD (Problem Demonstration)
+###############################################################################
+
+### Gateway (Without Bulkhead) - Health Check
+GET {{baseUrl}}/gateway/health
+
+### Gateway (Without Bulkhead) - Call Slow Service
+GET {{baseUrl}}/gateway/slow-process
+
+### Gateway (Without Bulkhead) - Call Fast Service
+GET {{baseUrl}}/gateway/fast-data
+
+### Gateway (Without Bulkhead) - View Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 4. LOAD TEST - WITHOUT BULKHEAD
+###############################################################################
+# Instructions:
+# 1. Run: node gateway-without-bulkhead.js
+# 2. Execute the requests below in sequence
+# 3. Observe how fast service gets blocked by slow service
+#
+# EXPECTED RESULT:
+# - Multiple slow requests will take ~5 seconds each
+# - If you send too many slow requests, fast service will timeout
+# - This demonstrates the PROBLEM without bulkhead pattern
+
+### Load Test 1: Send 5 concurrent slow requests
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+
+### Load Test 2: Send fast request during slow requests (WILL TIMEOUT)
+GET {{baseUrl}}/gateway/fast-data
+
+### Check Metrics After Load Test
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 5. GATEWAY - WITH BULKHEAD (Solution Demonstration)
+###############################################################################
+
+### Gateway (With Bulkhead) - Health Check
+GET {{baseUrl}}/gateway/health
+
+### Gateway (With Bulkhead) - Call Slow Service
+GET {{baseUrl}}/gateway/slow-process
+
+### Gateway (With Bulkhead) - Call Fast Service
+GET {{baseUrl}}/gateway/fast-data
+
+### Gateway (With Bulkhead) - View Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 6. LOAD TEST - WITH BULKHEAD
+###############################################################################
+# Instructions:
+# 1. Stop previous gateway and run: node gateway-with-bulkhead.js
+# 2. Execute the requests below in sequence
+# 3. Observe how fast service remains responsive
+#
+# EXPECTED RESULT:
+# - Slow service requests may get rejected (429 status) when bulkhead is full
+# - Fast service requests will complete in ~100ms even during slow request load
+# - This demonstrates the SOLUTION with bulkhead pattern
+# - System is more resilient to cascading failures
+
+### Load Test 1: Send 8 concurrent slow requests (some will be rejected)
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+
+### Load Test 2: Send fast request during slow requests (WILL SUCCEED!)
+GET {{baseUrl}}/gateway/fast-data
+
+### Load Test 3: Send multiple fast requests (All succeed quickly)
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+
+### Check Bulkhead Status
+GET {{baseUrl}}/gateway/health
+
+### Check Detailed Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 7. GATEWAY - WITH BULKHEAD + CIRCUIT BREAKER (Advanced Solution)
+###############################################################################
+
+### Gateway (With Circuit Breaker) - Health Check
+GET {{baseUrl}}/gateway/health
+
+### Gateway (With Circuit Breaker) - Call Slow Service
+GET {{baseUrl}}/gateway/slow-process
+
+### Gateway (With Circuit Breaker) - Call Fast Service
+GET {{baseUrl}}/gateway/fast-data
+
+### Gateway (With Circuit Breaker) - View Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 8. LOAD TEST - WITH BULKHEAD + CIRCUIT BREAKER
+###############################################################################
+# Instructions:
+# 1. Stop previous gateway and run: node gateway-with-bulkhead-circuit-breaker.js
+# 2. Execute the requests below in sequence
+# 3. Watch console output for circuit breaker state changes
+# 4. Observe how circuit breaker prevents cascading failures
+#
+# EXPECTED RESULT:
+# - Circuit breaker opens when failure threshold is reached
+# - Circuit breaker prevents wasteful requests to failing service
+# - System recovers automatically after timeout period
+# - Bulkhead + Circuit Breaker = Maximum Resilience
+
+### Load Test 1: Send multiple slow requests (watch console for circuit breaker)
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+
+### Load Test 2: Try more slow requests (will get circuit-open response)
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+
+### Load Test 3: Fast service remains unaffected (isolated by bulkhead)
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+
+### Check Status (circuit breaker state)
+GET {{baseUrl}}/gateway/health
+
+### Check Detailed Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# 9. ADVANCED SCENARIOS
+###############################################################################
+
+### Scenario 1: Extreme Load - Rapid fire requests (all services)
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/slow-process
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+GET {{baseUrl}}/gateway/fast-data
+
+### Scenario 2: Monitor System Health During Load
+GET {{baseUrl}}/gateway/health
+
+### Scenario 3: Get Complete Metrics
+GET {{baseUrl}}/gateway/metrics
+
+###############################################################################
+# COMPARISON TABLE - What to expect
+###############################################################################
+#
+# WITHOUT BULKHEAD:
+# ├─ Slow requests: 5s each (can timeout external calls)
+# ├─ Fast requests: TIMEOUT (thread pool exhausted) ❌
+# ├─ Cascading: YES (slow blocks fast) ❌
+# └─ Resilience: LOW ❌
+#
+# WITH BULKHEAD:
+# ├─ Slow requests: 5s each (rejected when limit reached)
+# ├─ Fast requests: ~100ms (always responsive) ✅
+# ├─ Cascading: NO (isolated resources) ✅
+# └─ Resilience: MEDIUM ✅
+#
+# WITH BULKHEAD + CIRCUIT BREAKER:
+# ├─ Slow requests: Rejected after failures (circuit opens)
+# ├─ Fast requests: ~100ms (always responsive) ✅
+# ├─ Cascading: NO (isolated + circuit prevention) ✅
+# ├─ Wasted Requests: NONE (circuit breaker stops them) ✅
+# └─ Resilience: HIGH ✅✅
+#
+###############################################################################
+
+### RECOMMENDED TEST SEQUENCE
+### ==========================
+###
+### Step 1: Test WITHOUT Bulkhead
+###   1. Run: node slow-api.js
+###   2. Run: node fast-api.js
+###   3. Run: node gateway-without-bulkhead.js
+###   4. Execute "Load Test - WITHOUT BULKHEAD" section requests
+###   5. Observe timeouts on fast requests
+###   6. Check metrics to confirm the problem
+###
+### Step 2: Test WITH Bulkhead
+###   1. Stop gateway
+###   2. Run: node gateway-with-bulkhead.js
+###   3. Execute "Load Test - WITH BULKHEAD" section requests
+###   4. Notice fast requests now succeed
+###   5. Check metrics to confirm the solution
+###
+### Step 3: Test WITH Bulkhead + Circuit Breaker
+###   1. Stop gateway
+###   2. Run: node gateway-with-bulkhead-circuit-breaker.js
+###   3. Execute "Load Test - WITH BULKHEAD + CIRCUIT BREAKER" section requests
+###   4. Watch console for circuit breaker state changes
+###   5. See how circuit breaker prevents cascading failures
+###
+###############################################################################
